@@ -13,6 +13,7 @@ Description: Screensaver Tool
 
 Package: deepin-screensaver-xscreensaver-data
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, xscreensaver-data-extra, xscreensaver-gl-extra, qml-module-qt-labs-platform
+Depends: ${misc:Depends}, ${shlibs:Depends}, xscreensaver-data-extra, xscreensaver-gl-extra, qml-module-qt-labs-platform, gxde-time-screensaver
+Recommends: mimicry-clock-screensaver
 Description: Screensaver data
  xscreensaver extra with the Deepin Screensaver.

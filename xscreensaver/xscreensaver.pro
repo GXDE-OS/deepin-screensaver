@@ -15,7 +15,7 @@ isEmpty(XSCREENSAVER_DATA_PATH) {
     if($$COMPILE_ON_V23) {
         XSCREENSAVER_DATA_PATH = $$PREFIX/libexec/xscreensaver
     } else {
-        XSCREENSAVER_DATA_PATH = $$PREFIX/lib/xscreensaver
+        XSCREENSAVER_DATA_PATH = $$PREFIX/libexec/xscreensaver
     }
 }
 

@@ -33,7 +33,9 @@ int main(int argc, char *argv[])
 
     DApplication a(argc, argv);
     a.setOrganizationName("deepin");
-
+    a.loadTranslator();
+    a.setApplicationName(QObject::tr("deepin-screensaver"));
+    a.setApplicationDisplayName(QObject::tr("deepin-screensaver"));
     CommandLineManager::instance()->process(a.arguments());
 
     if (CommandLineManager::instance()->isSet("window-id")) {
@@ -86,8 +88,12 @@ int main(int argc, char *argv[])
         else
             SlideshowConfig::instance()->setShuffle(false);
 
+    } else if (CommandLineManager::instance()->isSet("config")) {
+        qInfo() << "show dconfig dialog";
+        if (SlideshowConfig::instance()->startCustomConfig())
+            return a.exec();
+        return 0;
     } else {
-
         SlideshowScreenSaver screensaver;
         screensaver.init();
         screensaver.show();

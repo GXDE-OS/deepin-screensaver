@@ -1,9 +1,20 @@
-deepin-screensaver (5.0.19) UNRELEASED; urgency=medium
+deepin-screensaver (5.0.21) unstable; urgency=medium
 
-  * Change depend
-  * 
+  * fix a bug that os_version error
 
- -- gfdgd_xi <3025613752@qq.com>  Sun, 14 Apr 2024 12:12:24 +0800
+ -- Zhang Sheng <zhangsheng@uniontech.com>  Thu, 05 Dec 2024 19:20:57 +0800
+
+deepin-screensaver (5.0.20) unstable; urgency=medium
+
+  * update version to 5.0.20.
+
+ -- Zhanghexian <zhanghexian@uniontech.com>  Mon, 19 Aug 2024 10:37:18 +0800
+
+deepin-screensaver (5.0.19) unstable; urgency=medium
+
+  * update version to 5.0.19.
+
+ -- Zhang Sheng <zhangsheng@uniontech.com>  Tue, 16 Apr 2024 15:43:18 +0800
 
 deepin-screensaver (5.0.18) stable; urgency=medium
 

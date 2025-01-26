@@ -1,5 +1,5 @@
 TARGET = deepin-screensaver
-QT += core gui dbus quick x11extras
+QT += core gui dbus quick x11extras dtkcore
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11 link_pkgconfig
@@ -11,28 +11,21 @@ SOURCES += \
     $$PWD/dbusscreensaver.cpp \
     $$PWD/imageprovider.cpp \
     $$PWD/screensaverview.cpp \
-    $$PWD/truncatelineedit.cpp \
     $$PWD/screensaversettingdialog.cpp \
-    $$PWD/selectpathwidget.cpp \
     $$PWD/customconfig.cpp \
     $$PWD/utils.cpp \
     singlecustomsetting.cpp \
-    commandlinehelper.cpp \
-    timeintervalwidget.cpp
-
+    commandlinehelper.cpp
 HEADERS += \
     $$PWD/screensaverwindow.h \
     $$PWD/dbusscreensaver.h \
     $$PWD/imageprovider.h \
     $$PWD/screensaverview.h \
-    $$PWD/selectpathwidget.h \
-    $$PWD/truncatelineedit.h \
     $$PWD/screensaversettingdialog.h \
     $$PWD/customconfig.h \
     $$PWD/utils.h \
     singlecustomsetting.h \
-    commandlinehelper.h \
-    timeintervalwidget.h
+    commandlinehelper.h
 
 TRANSLATIONS += $$PWD/translations/$${TARGET}.ts \
     $$PWD/translations/$${TARGET}_zh_CN.ts
@@ -76,3 +69,14 @@ DEFINES += QMAKE_VERSION=\\\"$$VERSION\\\"
 
 RESOURCES += \
     images.qrc
+
+# DConfig
+meta_file.files += \
+    $$PWD/configs/org.deepin.screensaver.json
+meta_file.base = $$PWD/configs
+meta_file.appid = org.deepin.screensaver
+
+DCONFIG_META_FILES += meta_file
+load(dtk_install_dconfig)
+
+

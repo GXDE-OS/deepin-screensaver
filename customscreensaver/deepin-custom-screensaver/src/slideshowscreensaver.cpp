@@ -27,8 +27,6 @@ DWIDGET_USE_NAMESPACE
 SlideshowScreenSaver::SlideshowScreenSaver(bool subWindow, QWidget *parent)
     : QWidget(parent), m_subWindow(subWindow)
 {
-    qApp->loadTranslator();
-
     if (m_subWindow)
         setWindowFlag(Qt::WindowTransparentForInput, true);
 
@@ -94,7 +92,21 @@ void SlideshowScreenSaver::onUpdateImage()
         loadSlideshowImages();
     }
 
-    m_pixmap.reset(new QPixmap(m_playOrder.value(m_currentIndex)));
+    QPixmap pix(m_playOrder.value(m_currentIndex));
+    if (pix.isNull()) {
+        QImageReader reader(m_playOrder.value(m_currentIndex));
+        reader.setDecideFormatFromContent(true);
+        pix = QPixmap::fromImage(reader.read());
+    }
+
+    m_pixmap.reset(new QPixmap(pix));
+
+    if (m_pixmap && !m_pixmap->isNull()) {
+        m_invaildPath.clear();
+    } else {
+        m_invaildPath = m_playOrder.value(m_currentIndex);
+        qWarning() << "There is an issue with the format of the image" << m_invaildPath;
+    }
     scaledPixmap();
     update();
     return;
@@ -140,7 +152,8 @@ void SlideshowScreenSaver::showDefaultBlack(QPaintEvent *event)
 
     QPainter pa(&pip);
     pa.setPen(Qt::white);
-    pa.drawText(pip.rect(), Qt::AlignCenter, tr("Picture not found"));   // This text may be written in the configuration in the future
+    pa.drawText(pip.rect(), Qt::AlignCenter,
+                tr("Please select a valid image path in the Custom Screensaver \"Screensaver Setting\".") + m_invaildPath);
 
     const auto &pix = pip.scaled(mapFromHandle(this->geometry().size()), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     QPainter p(this);
@@ -204,13 +217,20 @@ void SlideshowScreenSaver::initPixMap()
         if (m_shuffle)
             randomImageIndex();
         QPixmap pix(m_playOrder.first());
-        if(pix.isNull())
-        {
+        if (pix.isNull()) {
             QImageReader reader(m_playOrder.first());
             reader.setDecideFormatFromContent(true);
             pix = QPixmap::fromImage(reader.read());
         }
+
         m_pixmap.reset(new QPixmap(pix));
+
+        if (m_pixmap && !m_pixmap->isNull()) {
+            m_invaildPath.clear();
+        } else {
+            m_invaildPath = m_playOrder.first();
+            qWarning() << "There is an issue with the format of the image" << m_invaildPath;
+        }
         scaledPixmap();
         m_currentIndex = 1;
         m_lastImage = m_playOrder.last();

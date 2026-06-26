@@ -5,10 +5,9 @@
 #ifndef DBUSSCREENSAVER_H
 #define DBUSSCREENSAVER_H
 
-#include <com_deepin_sessionmanager.h>
-
 #include <DConfig>
 
+#include <QEvent>
 #include <QObject>
 #include <QDir>
 #include <QTimer>
@@ -16,6 +15,7 @@
 #include <QDBusMessage>
 #include <QScreen>
 #include <QAtomicInteger>
+#include <QDBusInterface>
 
 DCORE_USE_NAMESPACE
 
@@ -35,6 +35,8 @@ class DBusScreenSaver : public QObject
 public:
     explicit DBusScreenSaver(QObject *parent = nullptr);
     ~DBusScreenSaver();
+
+    bool setProperty(const char *name, const QVariant &value);
 
     bool Preview(const QString &name, int staysOn = 1, bool preview = true);
     QString GetScreenSaverCover(const QString &name) const;
@@ -61,6 +63,7 @@ public:
     bool StartCustomConfig(const QString &name);
     QStringList ConfigurableItems();
     bool IsConfigurable(const QString &name);
+
 signals:
     void allScreenSaverChanged(QStringList allScreenSaver);
     void batteryScreenSaverTimeoutChanged(int batteryScreenSaverTimeout);
@@ -71,8 +74,10 @@ signals:
     void lockScreenDelayChanged(int lockScreenDelay);
 
 private:
+    Q_SLOT void onSessionPropertyChanged(const QString &interface, const QVariantMap &changed_properties, const QDBusMessage &message);
     Q_SLOT void onDBusPropertyChanged(const QString &interface, const QVariantMap &changed_properties, const QDBusMessage &message);
     Q_SLOT void onConfigChanged(const QString &key);
+    Q_SLOT void onInputEventReceived(QEvent::Type type);
 
     void clearResourceList();
     void ensureWindowMap();
@@ -82,6 +87,9 @@ private:
     void XGrabKeyBoard();
     void XUnGrabKeyBoard();
     void onLockedChanged(const bool locked);
+
+    // 统一的 DBus 属性变化信号发送方法
+    void sendDBusPropertyChanged(const QString &propertyName, const QVariant &value);
 
     QList<QDir> m_resourceDirList;
     QStringList m_resourceList;
@@ -99,10 +107,13 @@ private:
     QSettings m_settings;
     QScopedPointer<X11EventFilter> x11event;
 
-    com::deepin::SessionManager *m_sessionManagerInter = nullptr;
     QAtomicInteger<bool> m_grabKeyboard = false;
 
     DConfig *m_dcfg;
+    QScopedPointer<QDBusInterface> m_powerInterface;
+
+    static const QStringList m_dbusProperties;
+    bool m_previewing = false;
 };
 
 #endif // DBUSSCREENSAVER_H

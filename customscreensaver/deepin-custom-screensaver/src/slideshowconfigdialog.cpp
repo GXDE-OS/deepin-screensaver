@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 UnionTech Software Technology Co., Ltd.
+// SPDX-FileCopyrightText: 2023 - 2026 UnionTech Software Technology Co., Ltd.
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -141,7 +141,7 @@ void SlideShowConfigDialog::initUI()
 
         QWidget *box = new QWidget();
         QHBoxLayout *box_layout = new QHBoxLayout(box);
-        box_layout->setContentsMargins(0, 0, 0, 0);
+        box_layout->setContentsMargins(0, 0, 0, 10);
         auto resetBt = new DPushButton(QObject::tr("Restore Defaults"), box);
         resetBt->setMaximumWidth(300);
         resetBt->setAutoDefault(false);
@@ -186,9 +186,6 @@ void SlideShowConfigDialog::startConfig()
 
     setAttribute(Qt::WA_DeleteOnClose);
 
-    // remove dialog flag to let dock show window entry.
-    setWindowFlag(Qt::Dialog, false);
-
     QScreen *screen = qApp->primaryScreen();
     move(screen->geometry().width() / 2 - this->width() / 2,
          screen->geometry().height() / 2 - this->height() / 2);
@@ -220,7 +217,7 @@ void SlideShowConfigDialog::selectPath()
 
         // 如果默认值为空或不存在，则强制设置为图片目录
         if (currentPath.isEmpty() || !QFile::exists(currentPath)) {
-            currentPath = QDir::homePath() + "/Pictures";
+            currentPath = QDir::homePath() + "/Pictures/Wallpapers";
             qWarning() << "The default is empty or does not exist,set path is " << currentPath;
         }
     }

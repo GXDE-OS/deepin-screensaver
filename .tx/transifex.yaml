@@ -1,0 +1,8 @@
+filters:
+- filter_type: file
+  source_file: customscreensaver/deepin-custom-screensaver/translations/deepin-custom-screensaver.ts
+  file_format: QT
+  source_language: en
+  translation_files_expression: customscreensaver/deepin-custom-screensaver/translations/deepin-custom-screensaver_<lang>.ts
+settings:
+  pr_branch_name: transifex_update_<br_unique_id>

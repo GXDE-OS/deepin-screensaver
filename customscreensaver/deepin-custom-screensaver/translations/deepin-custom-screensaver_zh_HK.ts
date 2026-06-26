@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.1" language="zh_HK" sourcelanguage="en">
+<?xml version="1.0" ?><!DOCTYPE TS><TS version="2.1" language="zh_HK" sourcelanguage="en">
 <context>
     <name>QObject</name>
     <message>
@@ -8,18 +6,29 @@
         <source>Restore Defaults</source>
         <translation>恢復默認</translation>
     </message>
+    <message>
+        <location filename="../src/main.cpp" line="37"/>
+        <location filename="../src/main.cpp" line="38"/>
+        <source>deepin-screensaver</source>
+        <translation>自定義螢幕保護程式</translation>
+    </message>
 </context>
 <context>
     <name>SelectPathWidget</name>
     <message>
-        <location filename="../src/config/selectpathwidget.cpp" line="39"/>
+        <location filename="../src/config/selectpathwidget.cpp" line="45"/>
         <source>Picture path</source>
         <translation>選擇圖片路徑</translation>
     </message>
     <message>
-        <location filename="../src/config/selectpathwidget.cpp" line="46"/>
+        <location filename="../src/config/selectpathwidget.cpp" line="52"/>
         <source>Select a path of pictures</source>
         <translation>請選擇圖片路徑</translation>
+    </message>
+    <message>
+        <location filename="../src/config/selectpathwidget.cpp" line="83"/>
+        <source>Select a valid image path</source>
+        <translation>請選擇有效的圖片路徑</translation>
     </message>
 </context>
 <context>
@@ -53,7 +62,7 @@
 <context>
     <name>SlideshowScreenSaver</name>
     <message>
-        <location filename="../src/slideshowscreensaver.cpp" line="142"/>
+        <location filename="../src/slideshowscreensaver.cpp" line="168"/>
         <source>Please select a valid image path in the Custom Screensaver &quot;Screensaver Setting&quot;.</source>
         <translation>請在自定義屏保“屏保設置”中選擇有效的圖片路徑。</translation>
     </message>

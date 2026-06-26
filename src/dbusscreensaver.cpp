@@ -8,23 +8,29 @@
 #include "utils.h"
 
 #include <DDesktopEntry>
+#include <DSysInfo>
 
 #include <QDebug>
 #include <QGuiApplication>
 #include <QSettings>
 #include <QDBusConnection>
 #include <QDBusInterface>
+#include <QDBusMessage>
 #include <QResource>
 #include <QStandardPaths>
 #include <QDirIterator>
 #include <QTimer>
-#include <QX11Info>
 #include <QAbstractEventDispatcher>
 #include <QAbstractNativeEventFilter>
 #include <QWindow>
 #include <QThread>
 #include <QDateTime>
 #include <QProcess>
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+#include <QX11Info>
+#else
+#include <QtGui/private/qtx11extras_p.h>
+#endif
 
 #include <xcb/xcb.h>
 #include <X11/Xproto.h>
@@ -33,23 +39,20 @@
 #include <X11/extensions/scrnsaver.h>
 #include <X11/extensions/shape.h>
 
-#ifdef COMPILE_ON_V23
-#   define SYSTEMPOWER_SERVICE "org.deepin.dde.Power1"
-#   define SYSTEMPOWER_PATH "/org/deepin/dde/Power1"
-#   define LOCKFRONT_SERVICE "org.deepin.dde.LockFront1"
-#   define LOCKFRONT_PATH "/org/deepin/dde/LockFront1"
-#else
-#   define SYSTEMPOWER_SERVICE "com.deepin.daemon.Power"
-#   define SYSTEMPOWER_PATH "/com/deepin/daemon/Power"
-#   define LOCKFRONT_SERVICE "com.deepin.dde.lockFront"
-#   define LOCKFRONT_PATH "/com/deepin/dde/lockFront"
-#endif
-
 DCORE_USE_NAMESPACE
 
 static constexpr char dCfgAppId[] { "org.deepin.screensaver" };
 static constexpr char dCfgName[] { "org.deepin.screensaver" };
 static constexpr char dCurrentScreenSaver[] { "currentScreenSaver" };
+
+// 需要发送 DBus PropertiesChanged 信号的属性列表
+const QStringList DBusScreenSaver::m_dbusProperties = {
+    "currentScreenSaver",
+    "lockScreenAtAwake", 
+    "lockScreenDelay",
+    "batteryScreenSaverTimeout",
+    "linePowerScreenSaverTimeout"
+};
 
 struct xcb_screensaver_notify_event
 {
@@ -80,7 +83,11 @@ public:
 
     }
 
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) override
+#else
+    bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result) override
+#endif
     {
         Q_UNUSED(eventType)
         Q_UNUSED(result)
@@ -139,8 +146,17 @@ DBusScreenSaver::DBusScreenSaver(QObject *parent)
     connect(&m_autoQuitTimer, &QTimer::timeout, this, &QCoreApplication::quit);
     connect(m_dcfg, &DConfig::valueChanged, this, &DBusScreenSaver::onConfigChanged, Qt::DirectConnection);
 
-    QDBusConnection::sessionBus().connect(SYSTEMPOWER_SERVICE,
-                                          SYSTEMPOWER_PATH,
+    auto ver = DSysInfo::majorVersion().toInt();
+    QString powerService = "com.deepin.daemon.Power";
+    QString powerPath = "/com/deepin/daemon/Power";
+    if (ver > 20) {
+        powerService = "org.deepin.dde.Power1";
+        powerPath = "/org/deepin/dde/Power1";
+    }
+    m_powerInterface.reset(new QDBusInterface(powerService, powerPath, powerService, QDBusConnection::sessionBus(), this));
+
+    QDBusConnection::sessionBus().connect(powerService,
+                                          powerPath,
                                           "org.freedesktop.DBus.Properties",
                                           "PropertiesChanged",
                                           this, SLOT(onDBusPropertyChanged(QString,QVariantMap,QDBusMessage)));
@@ -160,11 +176,40 @@ DBusScreenSaver::~DBusScreenSaver()
     clearResourceList();
 }
 
+// 重写 setProperty 方法以自动发送 DBus PropertiesChanged 信号
+bool DBusScreenSaver::setProperty(const char *name, const QVariant &value)
+{
+    bool result = QObject::setProperty(name, value);
+    
+    if (result && m_dbusProperties.contains(name)) {
+        sendDBusPropertyChanged(name, value);
+    }
+    
+    return result;
+}
+
+void DBusScreenSaver::sendDBusPropertyChanged(const QString &propertyName, const QVariant &value)
+{
+    QVariantMap changedProperties;
+    changedProperties.insert(propertyName, value);
+
+    QDBusMessage signal = QDBusMessage::createSignal(
+        "/com/deepin/ScreenSaver",
+        "org.freedesktop.DBus.Properties",
+        "PropertiesChanged"
+    );
+    signal << "com.deepin.ScreenSaver" << changedProperties << QStringList();
+    QDBusConnection::sessionBus().send(signal);
+}
+
 bool DBusScreenSaver::Preview(const QString &name, int staysOn, bool preview)
 {
     const QDir &moduleDir = m_screenSaverNameToDir.value(name);
     if (!QFile::exists(moduleDir.absoluteFilePath(name)))
         return false;
+
+    m_previewing = preview;
+
     if (preview) {
         if (x11event) {
             QAbstractEventDispatcher::instance()->removeNativeEventFilter(x11event.data());
@@ -186,7 +231,7 @@ bool DBusScreenSaver::Preview(const QString &name, int staysOn, bool preview)
 
     for (ScreenSaverWindow *window : m_windowMap) {
         if (staysOn) {
-            window->setFlags(window->flags() | Qt::WindowStaysOnTopHint, !preview);
+            window->setFlags(window->flags() | Qt::WindowStaysOnTopHint, true);
         } else {
             window->setFlags(window->flags() | Qt::WindowStaysOnBottomHint, false);
         }
@@ -200,11 +245,7 @@ bool DBusScreenSaver::Preview(const QString &name, int staysOn, bool preview)
             window->start(moduleDir.absoluteFilePath(name));
         }
 
-        if (!preview) {
-            connect(window, &ScreenSaverWindow::inputEvent, this, &DBusScreenSaver::stop, Qt::UniqueConnection);
-        } else {
-            disconnect(window, &ScreenSaverWindow::inputEvent, this, &DBusScreenSaver::stop);
-        }
+        connect(window, &ScreenSaverWindow::inputEvent, this, &DBusScreenSaver::onInputEventReceived, Qt::UniqueConnection);
 
         window->show();
     }
@@ -221,12 +262,19 @@ bool DBusScreenSaver::Preview(const QString &name, int staysOn, bool preview)
 
         // 在wayland环境，无法从x11接收到ScreenSaverOff信号，导致即使屏保程序正在显示，锁屏界面也会弹出显示到屏保程序之上。
         // 此时在密码框中输入的第一个字符会被屏保程序抓取，导致输入的第一位密码字符丢失。
-        using namespace com::deepin;
-        if (!m_sessionManagerInter)
-            m_sessionManagerInter = new SessionManager("com.deepin.SessionManager", "/com/deepin/SessionManager", QDBusConnection::sessionBus(), this);
-
-        connect(m_sessionManagerInter, &SessionManager::LockedChanged, this, &DBusScreenSaver::onLockedChanged
-                , Qt::ConnectionType(Qt::QueuedConnection | Qt::UniqueConnection));
+        auto ver = DSysInfo::majorVersion().toInt();
+        QString sessionService = "com.deepin.SessionManager";
+        QString sessionPath = "/com/deepin/SessionManager";
+        if (ver > 20) {
+            sessionService = "org.deepin.dde.SessionManager1";
+            sessionPath = "/org/deepin/dde/SessionManager1";
+        }
+        
+        QDBusConnection::sessionBus().connect(sessionService,
+                                          sessionPath,
+                                          "org.freedesktop.DBus.Properties",
+                                          "PropertiesChanged",
+                                          this, SLOT(onSessionPropertyChanged(QString,QVariantMap,QDBusMessage)));
     }
 
     return true;
@@ -369,11 +417,19 @@ void DBusScreenSaver::Stop(bool lock)
     if (m_windowMap.isEmpty())
         return;
 
-    // 只在由窗口自己唤醒时才会触发锁屏
-    if (m_lockScreenAtAwake && !m_lockScreenTimer.isActive()
+    // 只在由窗口自己唤醒时才会触发锁屏，预览模式下不触发锁屏
+    if (m_lockScreenAtAwake && !m_lockScreenTimer.isActive() && !m_previewing
             && (lock || qobject_cast<ScreenSaverWindow*>(sender()))) {
-        QDBusInterface lockDBus(LOCKFRONT_SERVICE, LOCKFRONT_PATH,
-                                LOCKFRONT_SERVICE);
+        auto ver = DSysInfo::majorVersion().toInt();
+        QString lockfontService = "com.deepin.dde.lockFront";
+        QString lockfontPath = "/com/deepin/dde/lockFront";
+        if (ver > 20) {
+            lockfontService = "org.deepin.dde.LockFront1";
+            lockfontPath = "/org/deepin/dde/LockFront1";
+        }
+        
+        QDBusInterface lockDBus(lockfontService, lockfontPath,
+                                lockfontService);
 
         // 通过DBus拉起锁屏程序
         lockDBus.call("Show");
@@ -400,6 +456,7 @@ void DBusScreenSaver::Stop(bool lock)
 #endif
 
     emit isRunningChanged(false);
+    m_previewing = false;
 }
 
 void DBusScreenSaver::stop()
@@ -421,18 +478,12 @@ QStringList DBusScreenSaver::allScreenSaver() const
 
 int DBusScreenSaver::batteryScreenSaverTimeout() const
 {
-    QDBusInterface remoteApp( SYSTEMPOWER_SERVICE, SYSTEMPOWER_PATH,
-                              SYSTEMPOWER_SERVICE );
-
-    return remoteApp.property("BatteryScreensaverDelay").toInt();
+    return m_powerInterface->property("BatteryScreensaverDelay").toInt();
 }
 
 int DBusScreenSaver::linePowerScreenSaverTimeout() const
 {
-    QDBusInterface remoteApp( SYSTEMPOWER_SERVICE, SYSTEMPOWER_PATH,
-                              SYSTEMPOWER_SERVICE );
-
-    return remoteApp.property("LinePowerScreensaverDelay").toInt();
+    return m_powerInterface->property("LinePowerScreensaverDelay").toInt();
 }
 
 QString DBusScreenSaver::currentScreenSaver() const
@@ -447,18 +498,12 @@ bool DBusScreenSaver::isRunning() const
 
 void DBusScreenSaver::setBatteryScreenSaverTimeout(int batteryScreenSaverTimeout)
 {
-    QDBusInterface remoteApp( SYSTEMPOWER_SERVICE, SYSTEMPOWER_PATH,
-                              SYSTEMPOWER_SERVICE );
-
-    remoteApp.setProperty("BatteryScreensaverDelay", batteryScreenSaverTimeout);
+    m_powerInterface->setProperty("BatteryScreensaverDelay", batteryScreenSaverTimeout);
 }
 
 void DBusScreenSaver::setLinePowerScreenSaverTimeout(int linePowerScreenSaverTimeout)
 {
-    QDBusInterface remoteApp( SYSTEMPOWER_SERVICE, SYSTEMPOWER_PATH,
-                              SYSTEMPOWER_SERVICE );
-
-    remoteApp.setProperty("LinePowerScreensaverDelay", linePowerScreenSaverTimeout);
+    m_powerInterface->setProperty("LinePowerScreensaverDelay", linePowerScreenSaverTimeout);
 }
 
 void DBusScreenSaver::setCurrentScreenSaver(QString currentScreenSaver)
@@ -515,7 +560,15 @@ bool DBusScreenSaver::StartCustomConfig(const QString &name)
         if (exec.isEmpty()) {
             return false;
         }
-        return QProcess::startDetached(exec);
+        // 分割 exec 字符串，得到命令和参数列表
+        QStringList parts = exec.split(' ');
+        if (parts.isEmpty()) {
+            return QProcess::startDetached(exec, QStringList());
+        }
+
+        QString command = parts.takeFirst(); // 第一个部分是命令
+        QStringList arguments = parts; // 剩余部分是参数
+        return QProcess::startDetached(command, arguments);
     }
 
     if (Utils::hasConfigFile(name))
@@ -540,6 +593,23 @@ bool DBusScreenSaver::IsConfigurable(const QString &name)
     return Utils::hasDesktopConfigFile(name) || Utils::hasConfigFile(name);
 }
 
+void DBusScreenSaver::onSessionPropertyChanged(const QString &interface, const QVariantMap &changed_properties, const QDBusMessage &message)
+{
+    Q_UNUSED(interface)
+    Q_UNUSED(message)
+
+    auto begin = changed_properties.constBegin();
+
+    while (begin != changed_properties.constEnd()) {
+        if (QStringLiteral("Locked") == begin.key()) {
+            bool locked = begin.value().toBool();
+            onLockedChanged(locked);
+            break;
+        }
+        ++begin;
+    }
+}
+
 void DBusScreenSaver::onDBusPropertyChanged(const QString &interface, const QVariantMap &changed_properties, const QDBusMessage &message)
 {
     Q_UNUSED(interface)
@@ -548,7 +618,7 @@ void DBusScreenSaver::onDBusPropertyChanged(const QString &interface, const QVar
     auto begin = changed_properties.constBegin();
 
     while (begin != changed_properties.constEnd()) {
-        if (QLatin1Literal("BatteryScreensaverDelay") == begin.key()) {
+        if (QStringLiteral("BatteryScreensaverDelay") == begin.key()) {
             bool ok = false;
             int value = begin.value().toInt(&ok);
 
@@ -556,7 +626,7 @@ void DBusScreenSaver::onDBusPropertyChanged(const QString &interface, const QVar
                 emit batteryScreenSaverTimeoutChanged(value);
             else
                 qWarning() << "Failed the value cast to int type, name:" << begin.key() << "value:" << begin.value();
-        } else if (QLatin1Literal("LinePowerScreensaverDelay") == begin.key()) {
+        } else if (QStringLiteral("LinePowerScreensaverDelay") == begin.key()) {
             bool ok = false;
             int value = begin.value().toInt(&ok);
 
@@ -579,6 +649,17 @@ void DBusScreenSaver::onConfigChanged(const QString &key)
         return;
     if (key == dCurrentScreenSaver)
         setCurrentScreenSaver(screenSaver);
+}
+
+void DBusScreenSaver::onInputEventReceived(QEvent::Type type)
+{
+    if (m_previewing) {
+        if (type == QEvent::MouseMove) { // 预览时鼠标移动不退出
+            return;
+        }
+    }
+    qInfo() << QDateTime::currentDateTime().toString() << "receive input evnet and will quit:" << type;
+    Stop();
 }
 
 void DBusScreenSaver::clearResourceList()

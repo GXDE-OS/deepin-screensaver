@@ -1,25 +1,34 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.1" language="ca" sourcelanguage="en">
+<?xml version="1.0" ?><!DOCTYPE TS><TS version="2.1" language="ca" sourcelanguage="en">
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/slideshowconfigdialog.cpp" line="142"/>
+        <location filename="../src/slideshowconfigdialog.cpp" line="145"/>
         <source>Restore Defaults</source>
-        <translation>Restableix els valors per defecte</translation>
+        <translation>Restaura els valors per defecte</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="37"/>
+        <location filename="../src/main.cpp" line="38"/>
+        <source>deepin-screensaver</source>
+        <translation>Estalvi de pantalla personalitzat</translation>
     </message>
 </context>
 <context>
     <name>SelectPathWidget</name>
     <message>
-        <location filename="../src/config/selectpathwidget.cpp" line="39"/>
+        <location filename="../src/config/selectpathwidget.cpp" line="45"/>
         <source>Picture path</source>
-        <translation>Cam®™ de la imatge</translation>
+        <translation>Cam√≠ de la imatge</translation>
     </message>
     <message>
-        <location filename="../src/config/selectpathwidget.cpp" line="46"/>
+        <location filename="../src/config/selectpathwidget.cpp" line="52"/>
         <source>Select a path of pictures</source>
-        <translation>Seleccioneu un cam®™ per a les imatges</translation>
+        <translation>Seleccioneu un cam√≠ d&apos;imatges</translation>
+    </message>
+    <message>
+        <location filename="../src/config/selectpathwidget.cpp" line="83"/>
+        <source>Select a valid image path</source>
+        <translation type="unfinished"/>
     </message>
 </context>
 <context>
@@ -27,7 +36,7 @@
     <message>
         <location filename="../src/slideshowconfigdialog.cpp" line="82"/>
         <source>Custom Screensaver</source>
-        <translation>Protector de pantalla personalitzat</translation>
+        <translation>Estalvi de pantalla personalitzat</translation>
     </message>
     <message>
         <location filename="../src/slideshowconfigdialog.cpp" line="129"/>
@@ -37,7 +46,7 @@
     <message>
         <location filename="../src/slideshowconfigdialog.cpp" line="134"/>
         <source>Shuffle</source>
-        <translation>Aleatori</translation>
+        <translation>Barreja</translation>
     </message>
     <message>
         <location filename="../src/slideshowconfigdialog.cpp" line="135"/>
@@ -45,17 +54,17 @@
         <translation>Presentaci√≥ de diapositives</translation>
     </message>
     <message>
-        <location filename="../src/slideshowconfigdialog.cpp" line="225"/>
+        <location filename="../src/slideshowconfigdialog.cpp" line="228"/>
         <source>Picture path</source>
-        <translation type="unfinished"></translation>
+        <translation>Cam√≠ de la imatge</translation>
     </message>
 </context>
 <context>
     <name>SlideshowScreenSaver</name>
     <message>
-        <location filename="../src/slideshowscreensaver.cpp" line="143"/>
-        <source>Picture not found</source>
-        <translation>Imatge no trobada</translation>
+        <location filename="../src/slideshowscreensaver.cpp" line="168"/>
+        <source>Please select a valid image path in the Custom Screensaver &quot;Screensaver Setting&quot;.</source>
+        <translation>Seleccioneu un cam√≠ d&apos;imatge v√†lid a la Configuraci√≥ del protector de pantalla, del protector de pantalla personalitzat.</translation>
     </message>
 </context>
 <context>
@@ -63,7 +72,7 @@
     <message>
         <location filename="../src/config/timeintervalwidget.cpp" line="44"/>
         <source>Time interval (s)</source>
-        <translation>Interval/s de temps</translation>
+        <translation>Interval de temps (s)</translation>
     </message>
     <message>
         <location filename="../src/config/timeintervalwidget.cpp" line="46"/>

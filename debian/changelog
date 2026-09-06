@@ -1,3 +1,9 @@
+deepin-screensaver (6.5.11-1) unstable; urgency=medium
+
+  * Building against Qt 6.10
+
+ -- CharOfString <root@charofstring.cc>  Sat, 05 Sep 2026 22:18:02 +0800
+
 deepin-screensaver (6.5.11) unstable; urgency=medium
 
   * chore: Sync by

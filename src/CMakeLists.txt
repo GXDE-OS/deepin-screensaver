@@ -18,6 +18,9 @@ else()
 endif()
 
 find_package(Qt${QT_DESIRED_VERSION} REQUIRED COMPONENTS ${qt_required_components})
+if (QT_DESIRED_VERSION MATCHES 6 AND NOT TARGET Qt6::GuiPrivate)
+    find_package(Qt6GuiPrivate REQUIRED)
+endif()
 find_package(Dtk${DTK_VERSION_MAJOR} REQUIRED COMPONENTS Widget Gui Core)
 
 # 查找系统库

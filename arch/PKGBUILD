@@ -1,14 +1,14 @@
 # Maintainer: CharOfString <root@charofstring.cc>
-pkgbase=deepin-screensaver-git
-pkgname=('deepin-screensaver-git' 'deepin-screensaver-xscreensaver-data-git')
+pkgbase=gxde-deepin-screensaver
+pkgname=('gxde-deepin-screensaver' 'deepin-screensaver-xscreensaver-data')
 pkgver=6.5.12
 pkgrel=1
 pkgdesc='Screensaver viewer and tools for GXDE'
 arch=('x86_64' 'aarch64')
 url="https://github.com/GXDE-OS/deepin-screensaver"
 license=('GPL-3.0-or-later')
-makedepends=('git' 'cmake' 'ninja' 'qt6-tools' 'dtk6core-git' 'dtk6gui-git' 'dtk6widget-git' 'qt6-base'
-             'qt6-declarative' 'qt6-5compat' 'libx11' 'libxss' 'libxext' 'libxcb' 'gxde-desktop-base-git')
+makedepends=('git' 'cmake' 'ninja' 'qt6-tools' 'gxde-dtk6core' 'gxde-dtk6gui' 'gxde-dtk6widget' 'qt6-base'
+             'qt6-declarative' 'qt6-5compat' 'libx11' 'libxss' 'libxext' 'libxcb' 'gxde-desktop-base')
 source=()
 sha512sums=()
 
@@ -39,11 +39,12 @@ _pick() {
   done
 }
 
-package_deepin-screensaver-git() {
-  depends=('deepin-screensaver-xscreensaver-data-git' 'dtk6core-git' 'dtk6gui-git' 'dtk6widget-git'
+package_gxde-deepin-screensaver() {
+  depends=('deepin-screensaver-xscreensaver-data' 'gxde-dtk6core' 'gxde-dtk6gui' 'gxde-dtk6widget'
            'qt6-base' 'qt6-declarative' 'libx11' 'libxss' 'libxext' 'libxcb' 'libgcc' 'libstdc++' 'glibc')
-  provides=('deepin-screensaver')
-  conflicts=('deepin-screensaver')
+  provides=('deepin-screensaver' "deepin-screensaver-git=$pkgver")
+  conflicts=('deepin-screensaver' 'deepin-screensaver-git')
+  replaces=('deepin-screensaver-git')
 
   cd "$srcdir/root"
   _pick usr/bin/deepin-screensaver usr/share/dbus-1/services usr/share/dbus-1/interfaces \
@@ -52,15 +53,16 @@ package_deepin-screensaver-git() {
   install -Dm644 "$(_srcroot)/debian/deepin-screensaver.1" "$pkgdir/usr/share/man/man1/deepin-screensaver.1"
 }
 
-package_deepin-screensaver-xscreensaver-data-git() {
+package_deepin-screensaver-xscreensaver-data() {
   pkgdesc='Screensaver modules for GXDE'
   # Debian 的 xscreensaver-data、-data-extra、-gl-extra 在 Arch 中都属于 xscreensaver
   # Debian's xscreensaver-data, -data-extra and -gl-extra are all part of
   # xscreensaver on Arch.
-  depends=('xscreensaver' 'qt6-declarative' 'qt6-5compat' 'gxde-time-screensaver-git' 'dtk6core-git'
-           'dtk6gui-git' 'dtk6widget-git' 'qt6-base' 'libgcc' 'libstdc++' 'glibc')
-  provides=('deepin-screensaver-xscreensaver-data')
-  conflicts=('deepin-screensaver-xscreensaver-data')
+  depends=('xscreensaver' 'qt6-declarative' 'qt6-5compat' 'gxde-time-screensaver-git' 'gxde-dtk6core'
+           'gxde-dtk6gui' 'gxde-dtk6widget' 'qt6-base' 'libgcc' 'libstdc++' 'glibc')
+  provides=("deepin-screensaver-xscreensaver-data-git=$pkgver")
+  conflicts=('deepin-screensaver-xscreensaver-data-git')
+  replaces=('deepin-screensaver-xscreensaver-data-git')
 
   cd "$srcdir/root"
   _pick usr/lib/deepin-screensaver/modules usr/share/deepin-custom-screensaver/translations \

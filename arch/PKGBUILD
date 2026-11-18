@@ -58,7 +58,7 @@ package_deepin-screensaver-xscreensaver-data() {
   # Debian 的 xscreensaver-data、-data-extra、-gl-extra 在 Arch 中都属于 xscreensaver
   # Debian's xscreensaver-data, -data-extra and -gl-extra are all part of
   # xscreensaver on Arch.
-  depends=('xscreensaver' 'qt6-declarative' 'qt6-5compat' 'gxde-time-screensaver-git' 'gxde-dtk6core'
+  depends=('xscreensaver' 'qt6-declarative' 'qt6-5compat' 'gxde-time-screensaver' 'gxde-dtk6core'
            'gxde-dtk6gui' 'gxde-dtk6widget' 'qt6-base' 'libgcc' 'libstdc++' 'glibc')
   provides=("deepin-screensaver-xscreensaver-data-git=$pkgver")
   conflicts=('deepin-screensaver-xscreensaver-data-git')
